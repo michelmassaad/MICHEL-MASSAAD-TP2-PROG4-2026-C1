@@ -15,11 +15,17 @@
               <label class="form-label text-secondary small fw-semibold">Nombre</label>
               <input type="text" formControlName="nombre" class="form-control form-control-ui" placeholder="Juan"
                 [class.is-invalid]="registroForm.get('nombre')?.invalid && registroForm.get('nombre')?.touched">
+              @if (registroForm.get('nombre')?.invalid && registroForm.get('nombre')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un nombre válido.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Apellido</label>
               <input type="text" formControlName="apellido" class="form-control form-control-ui" placeholder="Perez"
                 [class.is-invalid]="registroForm.get('apellido')?.invalid && registroForm.get('apellido')?.touched">
+              @if (registroForm.get('apellido')?.invalid && registroForm.get('apellido')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un apellido válido.</div>
+              }
             </div>
           </div>
 
@@ -29,12 +35,18 @@
               <input type="email" formControlName="correo" class="form-control form-control-ui"
                 placeholder="juan@mail.com"
                 [class.is-invalid]="registroForm.get('correo')?.invalid && registroForm.get('correo')?.touched">
+              @if (registroForm.get('correo')?.invalid && registroForm.get('correo')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un correo válido.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Nombre de Usuario</label>
               <input type="text" formControlName="nombreUsuario" class="form-control form-control-ui"
                 placeholder="juanperez"
                 [class.is-invalid]="registroForm.get('nombreUsuario')?.invalid && registroForm.get('nombreUsuario')?.touched">
+              @if (registroForm.get('nombreUsuario')?.invalid && registroForm.get('nombreUsuario')?.touched) {
+                <div class="invalid-feedback fw-medium">El nombre de usuario es requerido.</div>
+              }
             </div>
           </div>
 
@@ -50,17 +62,16 @@
                 </button>
               </div>
               @if (registroForm.get('password')?.invalid && registroForm.get('password')?.touched) {
-              <small class="text-danger d-block mt-1 small-error">Mínimo 8 caracteres, una mayúscula y un
-                número.</small>
+                <small class="text-danger d-block mt-1 small-error">Mínimo 8 caracteres, una mayúscula y un número.</small>
               }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Repetir Contraseña</label>
               <input type="password" formControlName="repetirPassword" class="form-control form-control-ui"
                 placeholder="••••••••"
-                [class.is-invalid]="(registroForm.get('repetirPassword')?.touched && registroForm.hasError('noCoincide'))">
+                [class.is-invalid]="registroForm.get('repetirPassword')?.touched && registroForm.hasError('noCoincide')">
               @if (registroForm.touched && registroForm.hasError('noCoincide')) {
-              <small class="text-danger d-block mt-1 small-error">Las contraseñas no coinciden.</small>
+                <small class="text-danger d-block mt-1 small-error">Las contraseñas no coinciden.</small>
               }
             </div>
           </div>
@@ -70,26 +81,24 @@
               <label class="form-label text-secondary small fw-semibold">Fecha de Nacimiento</label>
               <input type="date" formControlName="fechaNacimiento" class="form-control form-control-ui"
                 [class.is-invalid]="registroForm.get('fechaNacimiento')?.invalid && registroForm.get('fechaNacimiento')?.touched">
+              @if (registroForm.get('fechaNacimiento')?.invalid && registroForm.get('fechaNacimiento')?.touched) {
+                <div class="invalid-feedback fw-medium">La fecha de nacimiento es requerida.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Imagen de Perfil</label>
-
               <div class="position-relative file-upload-wrapper">
                 <input type="file" (change)="onFileChange($event)"
-                  class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input" accept="image/*"
-                  style="cursor: pointer; z-index: 2;">
-
+                  class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input"
+                  accept="image/*" style="cursor: pointer; z-index: 2;">
                 <div class="form-control-ui d-flex align-items-center gap-3 visual-file-counterpart"
                   style="z-index: 1; padding: 0.4rem 0.6rem;">
-
                   <div class="fake-file-btn-badge">
                     <i class="bi bi-paperclip ms-1"></i>
                   </div>
-
                   <div class="fake-file-text text-truncate small" [class.text-white]="fotoSeleccionada">
                     {{ fotoSeleccionada ? fotoSeleccionada.name : 'Ningún archivo seleccionado' }}
                   </div>
-
                 </div>
               </div>
             </div>
@@ -100,36 +109,36 @@
             <textarea formControlName="descripcionBreve" class="form-control form-control-ui" rows="2"
               placeholder="Contanos un poco sobre vos..."
               [class.is-invalid]="registroForm.get('descripcionBreve')?.invalid && registroForm.get('descripcionBreve')?.touched"></textarea>
+            @if (registroForm.get('descripcionBreve')?.invalid && registroForm.get('descripcionBreve')?.touched) {
+              <div class="invalid-feedback fw-medium">La descripción es requerida (máximo 150 caracteres).</div>
+            }
           </div>
 
-          <!-- <div class="mb-4 p-3 rounded-3 role-container-ui text-center">
-            <label class="form-label d-block text-secondary small fw-semibold mb-2">Tipo de Perfil Asignado</label>
-            <div class="form-check form-check-inline me-4">
-              <input class="form-check-input radio-ui" type="radio" formControlName="perfil" id="roleUser" value="usuario">
-              <label class="form-check-label text-light small" for="roleUser">Usuario Estándar</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input radio-ui" type="radio" formControlName="perfil" id="roleAdmin" value="administrador">
-              <label class="form-check-label text-light small" for="roleAdmin">Administrador</label>
-            </div>
-          </div> -->
+          <!-- perfil comentado — igual que antes -->
+          <!-- <div class="mb-4 p-3 rounded-3 role-container-ui text-center"> ... </div> -->
 
           @if (errorMensaje()) {
-          <div class="alert alert-ui-danger text-center small py-2 mb-3">{{ errorMensaje() }}</div>
-          }
-          @if (mensajeExitoso()) {
-          <div class="alert alert-ui-success text-center small py-2 mb-3">{{ mensajeExitoso() }}</div>
+            <div class="alert alert-ui-danger text-center small py-2 mb-3">{{ errorMensaje() }}</div>
           }
 
           <div class="d-grid gap-3">
             <button type="submit" [disabled]="registroForm.invalid || loading()"
-              class="btn btn-ui-primary py-2.5 fw-semibold">
-              @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span>Registrando... } @else {
-              Crear Cuenta }
+                    class="btn fw-semibold py-2"
+                    [class.btn-ui-primary]="!mensajeExitoso()"
+                    [class.btn-ui-success]="mensajeExitoso()">
+              @if (mensajeExitoso()) {
+                <i class="bi bi-check-circle me-2"></i>{{ mensajeExitoso() }}
+              } @else if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Registrando...
+              } @else {
+                Crear Cuenta
+              }
             </button>
+
             <div class="text-center">
-              <p class="text-muted small mb-0">¿Ya tenés cuenta? <a routerLink="/login"
-                  class="text-link-cyan fw-medium">Iniciá sesión</a></p>
+              <p class="text-muted small mb-0">
+                ¿Ya tenés cuenta? <a routerLink="/login" class="text-link-cyan fw-medium">Iniciá sesión</a>
+              </p>
             </div>
           </div>
 

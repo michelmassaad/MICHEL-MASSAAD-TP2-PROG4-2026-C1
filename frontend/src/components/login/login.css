@@ -18,3 +18,10 @@
   color: var(--app-text);
   background-color: rgba(6, 182, 212, 0.05);
 }
+
+.btn-ui-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}

@@ -81,7 +81,6 @@ src/components/tarjeta-publicacion/tarjeta-publicacion.ts
 src/guards/auth.ts
 src/guards/guest.ts
 src/index.html
-src/interceptors/jwt.interceptor.ts
 src/main.server.ts
 src/main.ts
 src/models/publicacion.ts
@@ -380,29 +379,26 @@ export const config = mergeApplicationConfig(appConfig, serverConfig);
 
 <file path="src/app/app.config.ts">
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import {
-  PreloadAllModules,
-  provideRouter,
-  withComponentInputBinding,
-  withInMemoryScrolling,
-  withPreloading,
-} from '@angular/router';
+import { PreloadAllModules, provideRouter, withComponentInputBinding,
+         withInMemoryScrolling, withPreloading } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
-import { jwtInterceptor } from '../interceptors/jwt.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // ✅ Un solo provideRouter con todas las opciones
     provideRouter(
       routes,
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled' }),
       withComponentInputBinding(),
       withPreloading(PreloadAllModules),
     ),
-    // ✅ withInterceptors agrega el JWT automáticamente a cada request
-    provideHttpClient(withFetch(), withInterceptors([jwtInterceptor])  
+    // Sin archivo interceptor separado — una línea inline
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([
+        (req, next) => next(req.clone({ withCredentials: true })),
+      ]),
     ),
   ],
 };
@@ -531,6 +527,13 @@ export class App {
   color: var(--app-text);
   background-color: rgba(6, 182, 212, 0.05);
 }
+
+.btn-ui-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
 </file>
 
 <file path="src/components/login/login.html">
@@ -570,8 +573,19 @@ export class App {
           </div>
 
           <div class="d-grid gap-3">
-            <button type="submit" [disabled]="loginForm.invalid || loading()" class="btn btn-ui-primary py-2.5 fw-semibold">
-              @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span>Conectando... } @else { Entrar }
+
+            <!-- Botón con tres estados: Entrar / Conectando... / ¡Bienvenido! -->
+            <button type="submit" [disabled]="loginForm.invalid || loading()"
+                    class="btn fw-semibold py-2"
+                    [class.btn-ui-primary]="!mensajeExitoso()"
+                    [class.btn-ui-success]="mensajeExitoso()">
+              @if (mensajeExitoso()) {
+                <i class="bi bi-check-circle me-2"></i>{{ mensajeExitoso() }}
+              } @else if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Conectando...
+              } @else {
+                Entrar
+              }
             </button>
 
             @if (errorMensaje()) {
@@ -592,6 +606,7 @@ export class App {
             <div class="text-center mt-2">
               <p class="text-muted small mb-0">¿No tenés una cuenta? <a routerLink="/registro" class="text-link-cyan fw-medium">Registrate acá</a></p>
             </div>
+
           </div>
 
         </form>
@@ -675,32 +690,28 @@ export class LoginComponent {
   ];
 
   async onSubmit() {
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched(); 
-      return; 
-    }
-
-    this.loading.set(true);
-    this.errorMensaje.set('');
-
-    const { identificador, password } = this.loginForm.value;
-
-    // Asegurate de que tu AuthService ahora reciba este identificador (correo o username)
-    const loginCorrecto = await this.auth.login(identificador as string, password as string);
-
-    if (loginCorrecto) {
-      await firstValueFrom(timer(1000));
-      this.mensajeExitoso.set('¡Login exitoso!');
-      await firstValueFrom(timer(2000));
-      this.loading.set(false);
-      
-      // Redirección a la pantalla requerida en el Sprint 1 
-      this.router.navigate(['/publicaciones']);
-    } else {
-      this.errorMensaje.set('Credenciales incorrectas o usuario no registrado.');
-      this.loading.set(false);
-    }
+  if (this.loginForm.invalid) {
+    this.loginForm.markAllAsTouched();
+    return;
   }
+
+  this.loading.set(true);
+  this.errorMensaje.set('');
+  this.mensajeExitoso.set('');
+
+  const { identificador, password } = this.loginForm.value;
+  const loginCorrecto = await this.auth.login(identificador as string, password as string);
+
+  if (loginCorrecto) {
+    await firstValueFrom(timer(500));           // ← pausa para que se vea
+    this.mensajeExitoso.set('Inicio sesión exitoso...');   // ← mensaje inmediato
+    await firstValueFrom(timer(1500));           // ← pausa para que se vea
+    this.router.navigate(['/publicaciones']);
+  } else {
+    this.errorMensaje.set('Credenciales incorrectas o usuario no registrado.');
+    this.loading.set(false);
+  }
+}
 
   // Método para los botones de acceso rápido
   loginTest(identificadorTest: string, passwordTest: string) {
@@ -833,11 +844,11 @@ export class MiPerfilComponent {}
 <file path="src/components/navbar/navbar.html">
 <nav class="navbar navbar-expand-md navbar-dark ui-navbar sticky-top">
   <div class="container">
-    
-<a class="navbar-brand d-flex align-items-center fw-bold text-gradient" routerLink="/publicaciones">
-  <i class="bi bi-people-fill me-2 fs-4 text-cyan"></i>
-  <span>Tribu</span>
-</a>
+
+    <a class="navbar-brand d-flex align-items-center fw-bold text-gradient" routerLink="/publicaciones">
+      <i class="bi bi-people-fill me-2 fs-4 text-cyan"></i>
+      <span>Tribu</span>
+    </a>
 
     <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
       <span class="navbar-toggler-icon"></span>
@@ -845,7 +856,7 @@ export class MiPerfilComponent {}
 
     <div class="collapse navbar-collapse" id="navbarContent">
       <ul class="navbar-nav mx-auto gap-2 my-2 my-md-0">
-        @if (auth.isAuthenticated()) {
+        @if (auth.isAuthenticated() && !auth.esRutaAuth()) {
           <li class="nav-item">
             <a class="nav-link ui-nav-link" routerLink="/publicaciones" routerLinkActive="active">Publicaciones</a>
           </li>
@@ -863,7 +874,7 @@ export class MiPerfilComponent {}
       </ul>
 
       <div class="navbar-nav ms-auto align-items-center flex-row justify-content-center">
-        @if (auth.isAuthenticated()) {
+        @if (auth.isAuthenticated() && !auth.esRutaAuth()) {
           <div class="d-flex align-items-center gap-3">
             <div class="user-pill d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill">
               <img [src]="auth.user()?.fotoPerfil || 'https://ui-avatars.com/api/?name=' + auth.nombreCompleto() + '&background=6366f1&color=fff&size=32'"
@@ -1000,6 +1011,88 @@ export class NavbarComponent {
   border-color: var(--app-cyan);
   color: var(--app-cyan);
 }
+
+/* ── Modal de confirmación ───────────────────────────────────────────────── */
+
+/* Fondo oscuro detrás del modal — clic encima lo cierra */
+.modal-backdrop-ui {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1040;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Contenedor centrado del modal */
+.modal-ui {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem;
+  animation: slideUp 0.2s ease;
+}
+
+/* Caja interior del modal */
+.modal-ui-content {
+  background: rgba(13, 18, 30, 0.97);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Botón cancelar */
+.btn-modal-cancelar {
+  background: transparent;
+  border: 1px solid var(--app-border);
+  color: var(--app-text-muted);
+  border-radius: var(--app-radius-sm);
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-modal-cancelar:hover:not(:disabled) {
+  border-color: var(--app-text-muted);
+  color: var(--app-text);
+}
+
+/* Botón confirmar eliminar */
+.btn-modal-confirmar {
+  background: #f43f5e;
+  border: none;
+  color: white;
+  border-radius: var(--app-radius-sm);
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-modal-confirmar:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-modal-confirmar:disabled,
+.btn-modal-cancelar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translate(-50%, -44%); opacity: 0; }
+  to   { transform: translate(-50%, -50%); opacity: 1; }
+}
 </file>
 
 <file path="src/components/publicaciones/publicaciones.html">
@@ -1060,17 +1153,23 @@ export class NavbarComponent {
     </div>
   }
 
-  <div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-3">
+
+  <div class="d-flex align-items-center gap-2">
+    <small class="text-muted fw-semibold">Ordenar por:</small>
     <div class="btn-group-orden">
       <button class="btn-orden" [class.activo]="ordenamiento() === 'fecha'" (click)="cambiarOrden('fecha')">
-        <i class="bi bi-clock me-1"></i>Recientes
+        <i class="bi bi-clock me-1"></i>Fecha
       </button>
       <button class="btn-orden" [class.activo]="ordenamiento() === 'likes'" (click)="cambiarOrden('likes')">
-        <i class="bi bi-heart me-1"></i>Más gustados
+        <i class="bi bi-heart me-1"></i>Me gusta
       </button>
     </div>
-    <small class="text-muted fw-semibold">{{ total() }} publicaciones</small>
   </div>
+
+  <small class="text-muted fw-semibold">{{ total() }} publicaciones</small>
+
+</div>
 
   @if (loading() && publicaciones().length === 0) {
     <div class="text-center py-5">
@@ -1084,8 +1183,8 @@ export class NavbarComponent {
     </div>
   } @else {
     @for (pub of publicaciones(); track pub._id) {
-      <app-tarjeta-publicacion [publicacion]="pub" 
-                               (onToggleLike)="toggleLike($event)" 
+      <app-tarjeta-publicacion [publicacion]="pub"
+                               (onToggleLike)="toggleLike($event)"
                                (onEliminar)="eliminar($event)">
       </app-tarjeta-publicacion>
     }
@@ -1093,7 +1192,7 @@ export class NavbarComponent {
     @if (hayMas()) {
       <div class="text-center my-4">
         <button class="btn-cargar-mas" (click)="cargarMas()" [disabled]="loadingMas()">
-          @if (loadingMas()) { 
+          @if (loadingMas()) {
             <span class="spinner-border spinner-border-sm me-2"></span> Cargando...
           } @else {
             Ver más publicaciones
@@ -1104,6 +1203,35 @@ export class NavbarComponent {
   }
 
 </main>
+
+<!-- Modal de confirmación — reemplaza confirm() que está prohibido por el enunciado -->
+@if (mostrarModalEliminar()) {
+  <div class="modal-backdrop-ui" (click)="cerrarModalEliminar()"></div>
+
+  <div class="modal-ui">
+    <div class="modal-ui-content p-4">
+      <div class="text-center mb-3">
+        <i class="bi bi-trash3 text-danger" style="font-size: 2rem;"></i>
+      </div>
+      <h5 class="fw-bold text-center mb-2">¿Eliminar publicación?</h5>
+      <p class="text-muted text-center small mb-4">
+        Esta acción no se puede deshacer.
+      </p>
+      <div class="d-flex gap-2 justify-content-center">
+        <button class="btn btn-modal-cancelar" (click)="cerrarModalEliminar()" [disabled]="eliminando()">
+          Cancelar
+        </button>
+        <button class="btn btn-modal-confirmar" (click)="confirmarEliminar()" [disabled]="eliminando()">
+          @if (eliminando()) {
+            <span class="spinner-border spinner-border-sm me-1"></span> Eliminando...
+          } @else {
+            Sí, eliminar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
 </file>
 
 <file path="src/components/publicaciones/publicaciones.spec.ts">
@@ -1151,29 +1279,29 @@ export class PublicacionesComponent implements OnInit {
   private publicacionesService = inject(PublicacionesService);
   private fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
-  
 
   // ==========================================
-  // ESTADO DE LA VISTA (SINCRONIZADO CON HTML)
+  // ESTADO DE LA VISTA
   // ==========================================
   publicaciones = signal<any[]>([]);
   total = signal(0);
   loading = signal(false);
-  loadingMas = signal(false); 
-  mostrarFormulario = signal(false); // Controla el botón "Nueva publicación / Cancelar"
-  publicando = signal(false);        // Spinner de carga del botón "Publicar"
-  errorPublicacion = signal('');     // Alertas de error de la API
-  
+  loadingMas = signal(false);
+  mostrarFormulario = signal(false);
+  publicando = signal(false);
+  errorPublicacion = signal('');
+
+  // ── Modal de confirmación de eliminación (reemplaza confirm()) ──
+  mostrarModalEliminar = signal(false);
+  idAEliminar = signal<string | null>(null);
+  eliminando = signal(false);
 
   // Paginación y filtros
-  ordenamiento = signal('fecha');   
+  ordenamiento = signal('fecha');
   offset = signal(0);
   limit = 10;
 
-  // Determina reactivamente si quedan registros pendientes en la base de datos
   hayMas = computed(() => this.publicaciones().length < this.total());
-
-  // Muestra dinámicamente el nombre del archivo adjunto o el marcador por defecto
   nombreImagen = computed(() => this.imagenSeleccionada()?.name || '');
 
   // ==========================================
@@ -1186,9 +1314,9 @@ export class PublicacionesComponent implements OnInit {
   imagenSeleccionada = signal<File | null>(null);
 
   async ngOnInit() {
-  await this.auth.sessionReady;
-  this.cargarPublicaciones();
-}
+    await this.auth.sessionReady;
+    this.cargarPublicaciones();
+  }
 
   // ==========================================
   // MÉTODOS DE RED / API
@@ -1203,7 +1331,7 @@ export class PublicacionesComponent implements OnInit {
 
     try {
       const res = await this.publicacionesService.listar(this.offset(), this.limit, this.ordenamiento());
-      
+
       if (reset) {
         this.publicaciones.set(res.datos || []);
       } else {
@@ -1250,7 +1378,7 @@ export class PublicacionesComponent implements OnInit {
     const formData = new FormData();
     formData.append('titulo', this.crearForm.value.titulo as string);
     formData.append('descripcion', this.crearForm.value.descripcion as string);
-    
+
     if (this.imagenSeleccionada()) {
       formData.append('file', this.imagenSeleccionada() as File);
     }
@@ -1259,8 +1387,8 @@ export class PublicacionesComponent implements OnInit {
       await this.publicacionesService.crear(formData);
       this.crearForm.reset();
       this.imagenSeleccionada.set(null);
-      this.mostrarFormulario.set(false); // Esconde el panel tras publicar con éxito
-      this.ordenamiento.set('fecha'); 
+      this.mostrarFormulario.set(false);
+      this.ordenamiento.set('fecha');
       this.cargarPublicaciones(true);
     } catch (error: any) {
       console.error('Error al publicar', error);
@@ -1271,30 +1399,67 @@ export class PublicacionesComponent implements OnInit {
   }
 
   // ==========================================
-  // INTERACCIONES DE LAS TARJETAS (OUTPUT EVENTS)
+  // INTERACCIONES DE LAS TARJETAS
   // ==========================================
+
+  // ── FIX: ahora sí llama a darLike / quitarLike con actualización optimista ──
   async toggleLike(id: string) {
+    const pub = this.publicaciones().find(p => p._id === id);
+    if (!pub) return;
+
+    const miId = this.auth.user()?._id ?? '';
+    const yaLeDiLike = pub.likes.some((l: any) => l.toString() === miId || l === miId);
+
+    // Actualización optimista: la UI responde al instante sin esperar al servidor
+    this.publicaciones.update(lista =>
+      lista.map(p => {
+        if (p._id !== id) return p;
+        const likes = yaLeDiLike
+          ? p.likes.filter((l: any) => l.toString() !== miId)
+          : [...p.likes, miId];
+        return { ...p, likes };
+      })
+    );
+
     try {
-      // Intenta dar o quitar el like según corresponda e incrementa de forma asíncrona
-      const pub = this.publicaciones().find(p => p._id === id);
-      if (!pub) return;
-      
-      // Lógica nativa conectada a tu backend
-      this.cargarPublicaciones(true);
+      if (yaLeDiLike) {
+        await this.publicacionesService.quitarLike(id);
+      } else {
+        await this.publicacionesService.darLike(id);
+      }
     } catch (error) {
       console.error('Error al procesar la reacción de me gusta', error);
+      // Si falló, revertimos al estado real del servidor
+      this.cargarPublicaciones(true);
     }
   }
 
-  async eliminar(id: string) {
-    if (confirm('¿Estás seguro de que querés eliminar esta publicación?')) {
-      try {
-        await this.publicacionesService.eliminar(id);
-        this.cargarPublicaciones(true);
-      } catch (error) {
-        console.error('Error al remover la publicación seleccionada', error);
-      }
+  // ── FIX: modal en lugar de confirm() (el enunciado lo prohíbe) ──
+  eliminar(id: string) {
+    this.idAEliminar.set(id);
+    this.mostrarModalEliminar.set(true);
+  }
+
+  async confirmarEliminar() {
+    const id = this.idAEliminar();
+    if (!id) return;
+
+    this.eliminando.set(true);
+    try {
+      await this.publicacionesService.eliminar(id);
+      this.publicaciones.update(lista => lista.filter(p => p._id !== id));
+      this.total.update(t => t - 1);
+    } catch (error) {
+      console.error('Error al remover la publicación seleccionada', error);
+    } finally {
+      this.eliminando.set(false);
+      this.cerrarModalEliminar();
     }
+  }
+
+  cerrarModalEliminar() {
+    this.mostrarModalEliminar.set(false);
+    this.idAEliminar.set(null);
   }
 }
 </file>
@@ -1396,11 +1561,17 @@ export class PublicacionesComponent implements OnInit {
               <label class="form-label text-secondary small fw-semibold">Nombre</label>
               <input type="text" formControlName="nombre" class="form-control form-control-ui" placeholder="Juan"
                 [class.is-invalid]="registroForm.get('nombre')?.invalid && registroForm.get('nombre')?.touched">
+              @if (registroForm.get('nombre')?.invalid && registroForm.get('nombre')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un nombre válido.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Apellido</label>
               <input type="text" formControlName="apellido" class="form-control form-control-ui" placeholder="Perez"
                 [class.is-invalid]="registroForm.get('apellido')?.invalid && registroForm.get('apellido')?.touched">
+              @if (registroForm.get('apellido')?.invalid && registroForm.get('apellido')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un apellido válido.</div>
+              }
             </div>
           </div>
 
@@ -1410,12 +1581,18 @@ export class PublicacionesComponent implements OnInit {
               <input type="email" formControlName="correo" class="form-control form-control-ui"
                 placeholder="juan@mail.com"
                 [class.is-invalid]="registroForm.get('correo')?.invalid && registroForm.get('correo')?.touched">
+              @if (registroForm.get('correo')?.invalid && registroForm.get('correo')?.touched) {
+                <div class="invalid-feedback fw-medium">Ingresá un correo válido.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Nombre de Usuario</label>
               <input type="text" formControlName="nombreUsuario" class="form-control form-control-ui"
                 placeholder="juanperez"
                 [class.is-invalid]="registroForm.get('nombreUsuario')?.invalid && registroForm.get('nombreUsuario')?.touched">
+              @if (registroForm.get('nombreUsuario')?.invalid && registroForm.get('nombreUsuario')?.touched) {
+                <div class="invalid-feedback fw-medium">El nombre de usuario es requerido.</div>
+              }
             </div>
           </div>
 
@@ -1431,17 +1608,16 @@ export class PublicacionesComponent implements OnInit {
                 </button>
               </div>
               @if (registroForm.get('password')?.invalid && registroForm.get('password')?.touched) {
-              <small class="text-danger d-block mt-1 small-error">Mínimo 8 caracteres, una mayúscula y un
-                número.</small>
+                <small class="text-danger d-block mt-1 small-error">Mínimo 8 caracteres, una mayúscula y un número.</small>
               }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Repetir Contraseña</label>
               <input type="password" formControlName="repetirPassword" class="form-control form-control-ui"
                 placeholder="••••••••"
-                [class.is-invalid]="(registroForm.get('repetirPassword')?.touched && registroForm.hasError('noCoincide'))">
+                [class.is-invalid]="registroForm.get('repetirPassword')?.touched && registroForm.hasError('noCoincide')">
               @if (registroForm.touched && registroForm.hasError('noCoincide')) {
-              <small class="text-danger d-block mt-1 small-error">Las contraseñas no coinciden.</small>
+                <small class="text-danger d-block mt-1 small-error">Las contraseñas no coinciden.</small>
               }
             </div>
           </div>
@@ -1451,26 +1627,24 @@ export class PublicacionesComponent implements OnInit {
               <label class="form-label text-secondary small fw-semibold">Fecha de Nacimiento</label>
               <input type="date" formControlName="fechaNacimiento" class="form-control form-control-ui"
                 [class.is-invalid]="registroForm.get('fechaNacimiento')?.invalid && registroForm.get('fechaNacimiento')?.touched">
+              @if (registroForm.get('fechaNacimiento')?.invalid && registroForm.get('fechaNacimiento')?.touched) {
+                <div class="invalid-feedback fw-medium">La fecha de nacimiento es requerida.</div>
+              }
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label text-secondary small fw-semibold">Imagen de Perfil</label>
-
               <div class="position-relative file-upload-wrapper">
                 <input type="file" (change)="onFileChange($event)"
-                  class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input" accept="image/*"
-                  style="cursor: pointer; z-index: 2;">
-
+                  class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input"
+                  accept="image/*" style="cursor: pointer; z-index: 2;">
                 <div class="form-control-ui d-flex align-items-center gap-3 visual-file-counterpart"
                   style="z-index: 1; padding: 0.4rem 0.6rem;">
-
                   <div class="fake-file-btn-badge">
                     <i class="bi bi-paperclip ms-1"></i>
                   </div>
-
                   <div class="fake-file-text text-truncate small" [class.text-white]="fotoSeleccionada">
                     {{ fotoSeleccionada ? fotoSeleccionada.name : 'Ningún archivo seleccionado' }}
                   </div>
-
                 </div>
               </div>
             </div>
@@ -1481,36 +1655,36 @@ export class PublicacionesComponent implements OnInit {
             <textarea formControlName="descripcionBreve" class="form-control form-control-ui" rows="2"
               placeholder="Contanos un poco sobre vos..."
               [class.is-invalid]="registroForm.get('descripcionBreve')?.invalid && registroForm.get('descripcionBreve')?.touched"></textarea>
+            @if (registroForm.get('descripcionBreve')?.invalid && registroForm.get('descripcionBreve')?.touched) {
+              <div class="invalid-feedback fw-medium">La descripción es requerida (máximo 150 caracteres).</div>
+            }
           </div>
 
-          <!-- <div class="mb-4 p-3 rounded-3 role-container-ui text-center">
-            <label class="form-label d-block text-secondary small fw-semibold mb-2">Tipo de Perfil Asignado</label>
-            <div class="form-check form-check-inline me-4">
-              <input class="form-check-input radio-ui" type="radio" formControlName="perfil" id="roleUser" value="usuario">
-              <label class="form-check-label text-light small" for="roleUser">Usuario Estándar</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input radio-ui" type="radio" formControlName="perfil" id="roleAdmin" value="administrador">
-              <label class="form-check-label text-light small" for="roleAdmin">Administrador</label>
-            </div>
-          </div> -->
+          <!-- perfil comentado — igual que antes -->
+          <!-- <div class="mb-4 p-3 rounded-3 role-container-ui text-center"> ... </div> -->
 
           @if (errorMensaje()) {
-          <div class="alert alert-ui-danger text-center small py-2 mb-3">{{ errorMensaje() }}</div>
-          }
-          @if (mensajeExitoso()) {
-          <div class="alert alert-ui-success text-center small py-2 mb-3">{{ mensajeExitoso() }}</div>
+            <div class="alert alert-ui-danger text-center small py-2 mb-3">{{ errorMensaje() }}</div>
           }
 
           <div class="d-grid gap-3">
             <button type="submit" [disabled]="registroForm.invalid || loading()"
-              class="btn btn-ui-primary py-2.5 fw-semibold">
-              @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span>Registrando... } @else {
-              Crear Cuenta }
+                    class="btn fw-semibold py-2"
+                    [class.btn-ui-primary]="!mensajeExitoso()"
+                    [class.btn-ui-success]="mensajeExitoso()">
+              @if (mensajeExitoso()) {
+                <i class="bi bi-check-circle me-2"></i>{{ mensajeExitoso() }}
+              } @else if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Registrando...
+              } @else {
+                Crear Cuenta
+              }
             </button>
+
             <div class="text-center">
-              <p class="text-muted small mb-0">¿Ya tenés cuenta? <a routerLink="/login"
-                  class="text-link-cyan fw-medium">Iniciá sesión</a></p>
+              <p class="text-muted small mb-0">
+                ¿Ya tenés cuenta? <a routerLink="/login" class="text-link-cyan fw-medium">Iniciá sesión</a>
+              </p>
             </div>
           </div>
 
@@ -1553,6 +1727,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
+import { firstValueFrom, timer } from 'rxjs';
 
 @Component({
   selector: 'app-registro',
@@ -1570,11 +1745,9 @@ export class RegistroComponent {
   errorMensaje = signal('');
   mensajeExitoso = signal('');
   mostrarPassword = signal(false);
-  
-  // Guardamos el archivo seleccionado en una variable local
+
   fotoSeleccionada: File | null = null;
 
-  // Formulario Reactivo con todas las especificaciones de la UTN
   registroForm = this.fb.group({
     nombre: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
     apellido: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
@@ -1584,17 +1757,15 @@ export class RegistroComponent {
     repetirPassword: ['', [Validators.required]],
     fechaNacimiento: ['', [Validators.required]],
     descripcionBreve: ['', [Validators.required, Validators.maxLength(150)]],
-    perfil: ['usuario', [Validators.required]] // "usuario" por defecto
+    perfil: ['usuario', [Validators.required]]
   }, { validators: this.validarContraseñasIdenticas });
 
-  // Validador personalizado para confirmar que las claves coinciden
   private validarContraseñasIdenticas(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password')?.value;
     const repetirPassword = control.get('repetirPassword')?.value;
     return password === repetirPassword ? null : { noCoincide: true };
   }
 
-  // Captura el cambio del input file de Bootstrap
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
@@ -1610,8 +1781,8 @@ export class RegistroComponent {
 
     this.loading.set(true);
     this.errorMensaje.set('');
+    this.mensajeExitoso.set('');
 
-    // Construimos el FormData requerido por NestJS para transportar archivos mutipart
     const formData = new FormData();
     Object.keys(this.registroForm.controls).forEach(key => {
       const value = this.registroForm.get(key)?.value;
@@ -1627,15 +1798,16 @@ export class RegistroComponent {
     const registrado = await this.authService.registro(formData);
 
     if (registrado) {
-      this.mensajeExitoso.set('¡Cuenta creada con éxito! Redirigiendo...');
+      this.mensajeExitoso.set('¡Cuenta creada con éxito!');
       this.registroForm.reset();
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 2000);
+      await firstValueFrom(timer(1500));
+      this.router.navigate(['/login']);
     } else {
-      this.errorMensaje.set(this.authService.errorMensaje() || 'Error en el registro. El usuario o correo ya existen.');
+      this.errorMensaje.set(
+        this.authService.errorMensaje() || 'El usuario o correo ya existen.'
+      );
+      this.loading.set(false);
     }
-    this.loading.set(false);
   }
 
   togglePassword() {
@@ -1938,27 +2110,6 @@ export const guestGuard: CanActivateFn = async () => {
 </html>
 </file>
 
-<file path="src/interceptors/jwt.interceptor.ts">
-import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { AuthService } from '../services/auth';
-
-export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
-  const token = auth.obtenerToken();
-
-  console.log('🔑 Interceptor corriendo - token:', token ? 'PRESENTE' : 'NULL');
-
-  if (token) {
-    return next(req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` }
-    }));
-  }
-
-  return next(req);
-};
-</file>
-
 <file path="src/main.server.ts">
 import { BootstrapContext, bootstrapApplication } from '@angular/platform-browser';
 import { App } from './app/app';
@@ -2042,9 +2193,10 @@ export interface Usuario {
   createdAt: string;
 }
 
-export interface RespuestaLogin {
-  token: string; // El profesor usa "token", no "access_token"
-  usuario: Omit<Usuario, 'password'>;
+// El token va en la cookie — solo recibimos el usuario
+export interface RespuestaAuth {
+  mensaje: string;
+  usuario: Usuario;
 }
 </file>
 
@@ -2124,66 +2276,58 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { Usuario, RespuestaLogin } from '../models/usuario';
+import { Usuario } from '../models/usuario';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
 
-  // Asegurate de que este prefijo coincida con tu controller en NestJS
   private readonly API_URL = 'http://localhost:3000/api/auth';
-  private readonly TOKEN_KEY = 'rs_token';
   private readonly USUARIO_KEY = 'rs_usuario';
 
-  // ── Signals de estado (Mantenidos intactos) ──────────────────
   user = signal<Usuario | null>(this.cargarUsuarioLocal());
-  private _token = signal<string | null>(localStorage.getItem(this.TOKEN_KEY));
 
-  // computed() — valores derivados que se recalculan solos
   isAuthenticated = computed(() => this.user() !== null);
-  
-  // MODIFICACIÓN: Se agregó el espacio entre nombre y apellido
   nombreCompleto = computed(() =>
     this.user() ? `${this.user()!.nombre} ${this.user()!.apellido}` : 'Usuario',
   );
-  
-  // MODIFICACIÓN CRÍTICA: El TP pide que el atributo se llame "perfil", no "rol"
   esAdmin = computed(() => this.user()?.perfil === 'administrador');
-  
   errorMensaje = signal('');
 
   sessionReady: Promise<void>;
 
   constructor() {
-    this.sessionReady = this.inicializarSesion();
+    this.sessionReady = this.verificarSesion();
   }
 
-  private async inicializarSesion(): Promise<void> {
-    const token = localStorage.getItem(this.TOKEN_KEY);
-    const usuarioJson = localStorage.getItem(this.USUARIO_KEY);
-    if (token && usuarioJson) {
-      this._token.set(token);
-      this.user.set(JSON.parse(usuarioJson));
+  private async verificarSesion(): Promise<void> {
+    try {
+      const usuario = await firstValueFrom(
+        this.http.get<Usuario>(`${this.API_URL}/me`),
+      );
+      this.user.set(usuario);
+      localStorage.setItem(this.USUARIO_KEY, JSON.stringify(usuario));
+    } catch {
+      this.user.set(null);
+      localStorage.removeItem(this.USUARIO_KEY);
     }
   }
 
-  // ── Métodos de autenticación ──────────────────────────────────────────────
   async login(identificador: string, password: string): Promise<boolean> {
     try {
       const respuesta = await firstValueFrom(
-        this.http.post<RespuestaLogin>(`${this.API_URL}/login`, { identificador, password }),
+        this.http.post<{ mensaje: string; usuario: Usuario }>(
+          `${this.API_URL}/login`,
+          { identificador, password },
+        ),
       );
-      localStorage.setItem(this.TOKEN_KEY, respuesta.token);
       localStorage.setItem(this.USUARIO_KEY, JSON.stringify(respuesta.usuario));
-      
-      this._token.set(respuesta.token);
       this.user.set(respuesta.usuario as Usuario);
       this.errorMensaje.set('');
       return true;
     } catch (err: any) {
-      const msg =
-        err.status === 401 ? 'Credenciales inválidas.' : 'Error al iniciar sesión.';
+      const msg = err.status === 401 ? 'Credenciales inválidas.' : 'Error al iniciar sesión.';
       this.errorMensaje.set(msg);
       return false;
     }
@@ -2194,23 +2338,19 @@ export class AuthService {
       await firstValueFrom(this.http.post(`${this.API_URL}/registro`, formData));
       return true;
     } catch (err: any) {
-      // Manejo de errores que pueda escupir NestJS (ej: BadRequest con array de validaciones)
       const msg = err.error?.message || 'Error al registrarse.';
       this.errorMensaje.set(Array.isArray(msg) ? msg.join(', ') : msg);
       return false;
     }
   }
 
-  obtenerToken(): string | null {
-    return this._token();
-  }
-
-  cerrarSesion() {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.USUARIO_KEY);
-    this._token.set(null);
+  async cerrarSesion(): Promise<void> {
+    try {
+      await firstValueFrom(this.http.post(`${this.API_URL}/logout`, {}));
+    } catch {}
     this.user.set(null);
-    this.router.navigate(['/login']); // Redirección limpia al login
+    localStorage.removeItem(this.USUARIO_KEY);
+    this.router.navigate(['/login']);
   }
 
   private cargarUsuarioLocal(): Usuario | null {
@@ -2221,32 +2361,29 @@ export class AuthService {
       return null;
     }
   }
+
+  // Método para verificar si la ruta actual es de autenticación (login o registro)
+  esRutaAuth(): boolean {
+    return this.router.url.includes('/login') || this.router.url.includes('/registro');
+}
 }
 </file>
 
 <file path="src/services/publicaciones.ts">
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from './auth';
 
 @Injectable({ providedIn: 'root' })
 export class PublicacionesService {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
-  
-  private apiUrl = 'http://localhost:3000/api/publicaciones';
 
-  // Helper para inyectar el token en cada petición
-  private getHeaders() {
-    const token = this.authService.obtenerToken();
-    return { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) };
-  }
+  private apiUrl = 'http://localhost:3000/api/publicaciones';
 
   // ── CREAR (Recibe FormData porque puede tener imagen)
   async crear(formData: FormData) {
     return firstValueFrom(
-      this.http.post(this.apiUrl, formData, this.getHeaders())
+      this.http.post(this.apiUrl, formData)
     );
   }
 
@@ -2257,28 +2394,28 @@ export class PublicacionesService {
       url += `&autorId=${autorId}`;
     }
     return firstValueFrom(
-      this.http.get<{ datos: any[]; total: number }>(url, this.getHeaders())
+      this.http.get<{ datos: any[]; total: number }>(url)
     );
   }
 
   // ── LIKE
   async darLike(id: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiUrl}/${id}/like`, {}, this.getHeaders())
+      this.http.post(`${this.apiUrl}/${id}/like`, {})
     );
   }
 
   // ── QUITAR LIKE
   async quitarLike(id: string) {
     return firstValueFrom(
-      this.http.delete(`${this.apiUrl}/${id}/like`, this.getHeaders())
+      this.http.delete(`${this.apiUrl}/${id}/like`)
     );
   }
 
   // ── ELIMINAR
   async eliminar(id: string) {
     return firstValueFrom(
-      this.http.delete(`${this.apiUrl}/${id}`, this.getHeaders())
+      this.http.delete(`${this.apiUrl}/${id}`)
     );
   }
 }

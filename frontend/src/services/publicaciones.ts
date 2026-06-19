@@ -1,25 +1,17 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from './auth';
 
 @Injectable({ providedIn: 'root' })
 export class PublicacionesService {
   private http = inject(HttpClient);
-  private authService = inject(AuthService);
-  
-  private apiUrl = 'http://localhost:3000/api/publicaciones';
 
-  // Helper para inyectar el token en cada petición
-  private getHeaders() {
-    const token = this.authService.obtenerToken();
-    return { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) };
-  }
+  private apiUrl = 'http://localhost:3000/api/publicaciones';
 
   // ── CREAR (Recibe FormData porque puede tener imagen)
   async crear(formData: FormData) {
     return firstValueFrom(
-      this.http.post(this.apiUrl, formData, this.getHeaders())
+      this.http.post(this.apiUrl, formData)
     );
   }
 
@@ -30,28 +22,28 @@ export class PublicacionesService {
       url += `&autorId=${autorId}`;
     }
     return firstValueFrom(
-      this.http.get<{ datos: any[]; total: number }>(url, this.getHeaders())
+      this.http.get<{ datos: any[]; total: number }>(url)
     );
   }
 
   // ── LIKE
   async darLike(id: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiUrl}/${id}/like`, {}, this.getHeaders())
+      this.http.post(`${this.apiUrl}/${id}/like`, {})
     );
   }
 
   // ── QUITAR LIKE
   async quitarLike(id: string) {
     return firstValueFrom(
-      this.http.delete(`${this.apiUrl}/${id}/like`, this.getHeaders())
+      this.http.delete(`${this.apiUrl}/${id}/like`)
     );
   }
 
   // ── ELIMINAR
   async eliminar(id: string) {
     return firstValueFrom(
-      this.http.delete(`${this.apiUrl}/${id}`, this.getHeaders())
+      this.http.delete(`${this.apiUrl}/${id}`)
     );
   }
 }

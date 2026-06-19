@@ -72,3 +72,85 @@
   border-color: var(--app-cyan);
   color: var(--app-cyan);
 }
+
+/* ── Modal de confirmación ───────────────────────────────────────────────── */
+
+/* Fondo oscuro detrás del modal — clic encima lo cierra */
+.modal-backdrop-ui {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1040;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Contenedor centrado del modal */
+.modal-ui {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1050;
+  width: 100%;
+  max-width: 400px;
+  padding: 1rem;
+  animation: slideUp 0.2s ease;
+}
+
+/* Caja interior del modal */
+.modal-ui-content {
+  background: rgba(13, 18, 30, 0.97);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Botón cancelar */
+.btn-modal-cancelar {
+  background: transparent;
+  border: 1px solid var(--app-border);
+  color: var(--app-text-muted);
+  border-radius: var(--app-radius-sm);
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-modal-cancelar:hover:not(:disabled) {
+  border-color: var(--app-text-muted);
+  color: var(--app-text);
+}
+
+/* Botón confirmar eliminar */
+.btn-modal-confirmar {
+  background: #f43f5e;
+  border: none;
+  color: white;
+  border-radius: var(--app-radius-sm);
+  padding: 0.55rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-modal-confirmar:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-modal-confirmar:disabled,
+.btn-modal-cancelar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translate(-50%, -44%); opacity: 0; }
+  to   { transform: translate(-50%, -50%); opacity: 1; }
+}

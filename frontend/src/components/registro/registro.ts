@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth';
+import { firstValueFrom, timer } from 'rxjs';
 
 @Component({
   selector: 'app-registro',
@@ -20,11 +21,9 @@ export class RegistroComponent {
   errorMensaje = signal('');
   mensajeExitoso = signal('');
   mostrarPassword = signal(false);
-  
-  // Guardamos el archivo seleccionado en una variable local
+
   fotoSeleccionada: File | null = null;
 
-  // Formulario Reactivo con todas las especificaciones de la UTN
   registroForm = this.fb.group({
     nombre: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
     apellido: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
@@ -34,17 +33,15 @@ export class RegistroComponent {
     repetirPassword: ['', [Validators.required]],
     fechaNacimiento: ['', [Validators.required]],
     descripcionBreve: ['', [Validators.required, Validators.maxLength(150)]],
-    perfil: ['usuario', [Validators.required]] // "usuario" por defecto
+    perfil: ['usuario', [Validators.required]]
   }, { validators: this.validarContraseñasIdenticas });
 
-  // Validador personalizado para confirmar que las claves coinciden
   private validarContraseñasIdenticas(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password')?.value;
     const repetirPassword = control.get('repetirPassword')?.value;
     return password === repetirPassword ? null : { noCoincide: true };
   }
 
-  // Captura el cambio del input file de Bootstrap
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
@@ -60,8 +57,8 @@ export class RegistroComponent {
 
     this.loading.set(true);
     this.errorMensaje.set('');
+    this.mensajeExitoso.set('');
 
-    // Construimos el FormData requerido por NestJS para transportar archivos mutipart
     const formData = new FormData();
     Object.keys(this.registroForm.controls).forEach(key => {
       const value = this.registroForm.get(key)?.value;
@@ -77,15 +74,16 @@ export class RegistroComponent {
     const registrado = await this.authService.registro(formData);
 
     if (registrado) {
-      this.mensajeExitoso.set('¡Cuenta creada con éxito! Redirigiendo...');
+      this.mensajeExitoso.set('¡Cuenta creada con éxito!');
       this.registroForm.reset();
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 2000);
+      await firstValueFrom(timer(1500));
+      this.router.navigate(['/login']);
     } else {
-      this.errorMensaje.set(this.authService.errorMensaje() || 'Error en el registro. El usuario o correo ya existen.');
+      this.errorMensaje.set(
+        this.authService.errorMensaje() || 'El usuario o correo ya existen.'
+      );
+      this.loading.set(false);
     }
-    this.loading.set(false);
   }
 
   togglePassword() {

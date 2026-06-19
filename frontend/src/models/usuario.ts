@@ -12,7 +12,8 @@ export interface Usuario {
   createdAt: string;
 }
 
-export interface RespuestaLogin {
-  token: string; // El profesor usa "token", no "access_token"
-  usuario: Omit<Usuario, 'password'>;
+// El token va en la cookie — solo recibimos el usuario
+export interface RespuestaAuth {
+  mensaje: string;
+  usuario: Usuario;
 }

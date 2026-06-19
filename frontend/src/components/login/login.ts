@@ -45,32 +45,28 @@ export class LoginComponent {
   ];
 
   async onSubmit() {
-    if (this.loginForm.invalid) {
-      this.loginForm.markAllAsTouched(); 
-      return; 
-    }
-
-    this.loading.set(true);
-    this.errorMensaje.set('');
-
-    const { identificador, password } = this.loginForm.value;
-
-    // Asegurate de que tu AuthService ahora reciba este identificador (correo o username)
-    const loginCorrecto = await this.auth.login(identificador as string, password as string);
-
-    if (loginCorrecto) {
-      await firstValueFrom(timer(1000));
-      this.mensajeExitoso.set('¡Login exitoso!');
-      await firstValueFrom(timer(2000));
-      this.loading.set(false);
-      
-      // Redirección a la pantalla requerida en el Sprint 1 
-      this.router.navigate(['/publicaciones']);
-    } else {
-      this.errorMensaje.set('Credenciales incorrectas o usuario no registrado.');
-      this.loading.set(false);
-    }
+  if (this.loginForm.invalid) {
+    this.loginForm.markAllAsTouched();
+    return;
   }
+
+  this.loading.set(true);
+  this.errorMensaje.set('');
+  this.mensajeExitoso.set('');
+
+  const { identificador, password } = this.loginForm.value;
+  const loginCorrecto = await this.auth.login(identificador as string, password as string);
+
+  if (loginCorrecto) {
+    await firstValueFrom(timer(500));           // ← pausa para que se vea
+    this.mensajeExitoso.set('Inicio sesión exitoso...');   // ← mensaje inmediato
+    await firstValueFrom(timer(1500));           // ← pausa para que se vea
+    this.router.navigate(['/publicaciones']);
+  } else {
+    this.errorMensaje.set('Credenciales incorrectas o usuario no registrado.');
+    this.loading.set(false);
+  }
+}
 
   // Método para los botones de acceso rápido
   loginTest(identificadorTest: string, passwordTest: string) {

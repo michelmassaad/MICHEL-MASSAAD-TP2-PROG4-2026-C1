@@ -34,8 +34,19 @@
           </div>
 
           <div class="d-grid gap-3">
-            <button type="submit" [disabled]="loginForm.invalid || loading()" class="btn btn-ui-primary py-2.5 fw-semibold">
-              @if (loading()) { <span class="spinner-border spinner-border-sm me-2"></span>Conectando... } @else { Entrar }
+
+            <!-- Botón con tres estados: Entrar / Conectando... / ¡Bienvenido! -->
+            <button type="submit" [disabled]="loginForm.invalid || loading()"
+                    class="btn fw-semibold py-2"
+                    [class.btn-ui-primary]="!mensajeExitoso()"
+                    [class.btn-ui-success]="mensajeExitoso()">
+              @if (mensajeExitoso()) {
+                <i class="bi bi-check-circle me-2"></i>{{ mensajeExitoso() }}
+              } @else if (loading()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>Conectando...
+              } @else {
+                Entrar
+              }
             </button>
 
             @if (errorMensaje()) {
@@ -56,6 +67,7 @@
             <div class="text-center mt-2">
               <p class="text-muted small mb-0">¿No tenés una cuenta? <a routerLink="/registro" class="text-link-cyan fw-medium">Registrate acá</a></p>
             </div>
+
           </div>
 
         </form>
