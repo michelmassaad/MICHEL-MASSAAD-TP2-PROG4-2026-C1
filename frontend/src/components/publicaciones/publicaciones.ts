@@ -3,13 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PublicacionesService } from '../../services/publicaciones';
 import { TarjetaPublicacionComponent } from '../tarjeta-publicacion/tarjeta-publicacion';
-import { NavbarComponent } from '../navbar/navbar';
 import { AuthService } from '../../services/auth';
 
 @Component({
   selector: 'app-publicaciones',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TarjetaPublicacionComponent, NavbarComponent],
+  imports: [CommonModule, ReactiveFormsModule, TarjetaPublicacionComponent],
   templateUrl: './publicaciones.html',
   styleUrl: './publicaciones.css'
 })

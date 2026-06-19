@@ -107,3 +107,93 @@
   color: var(--app-danger);
   background: rgba(244, 63, 94, 0.08);
 }
+
+/* ─── Botón de comentarios ──────────────────────────────────── */
+.btn-comentarios {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 1px solid var(--app-border);
+  color: var(--app-text-muted);
+  border-radius: 20px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-comentarios:hover { border-color: var(--app-cyan); color: var(--app-cyan); }
+
+.btn-comentarios.activo {
+  border-color: var(--app-cyan);
+  color: var(--app-cyan);
+  background: rgba(6, 182, 212, 0.08);
+}
+
+/* ─── Sección de comentarios ─────────────────────────────────── */
+.comentarios-seccion {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--app-border);
+  animation: fadeIn 0.2s ease;
+}
+
+.sin-comentarios {
+  font-size: 0.82rem;
+  color: var(--app-text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.comentarios-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.comentario-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.comentario-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--app-border);
+}
+
+.comentario-cuerpo {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.comentario-autor {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+.comentario-fecha {
+  font-size: 0.72rem;
+  color: var(--app-text-muted);
+}
+
+.comentario-texto {
+  font-size: 0.85rem;
+  color: rgba(248, 250, 252, 0.8);
+  margin: 0.25rem 0 0;
+  line-height: 1.5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

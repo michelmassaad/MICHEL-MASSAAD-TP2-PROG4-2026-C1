@@ -8,7 +8,7 @@
         'https://ui-avatars.com/api/?name=' + publicacion().autor.nombre +
         '&background=6366f1&color=fff&size=40'"
       [alt]="publicacion().autor.nombreUsuario"
-/>
+    />
     <div>
       <p class="tarjeta-autor">
         {{ publicacion().autor.nombre }} {{ publicacion().autor.apellido }}
@@ -31,23 +31,23 @@
       [src]="publicacion().imagenUrl"
       [alt]="publicacion().titulo"
       loading="lazy"
-/>
+    />
   }
 
   <!-- Botones de acción -->
   <div class="tarjeta-acciones">
 
-    <!-- Botón de like -->
-    <button
-      class="btn-like"
-      [class.activo]="yaLeDiLike()"
-      (click)="clickLike()"
->
+    <button class="btn-like" [class.activo]="yaLeDiLike()" (click)="clickLike()">
       <i class="bi" [class.bi-heart-fill]="yaLeDiLike()" [class.bi-heart]="!yaLeDiLike()"></i>
       {{ publicacion().likes.length }}
     </button>
 
-    <!-- Botón eliminar (solo si es mía o soy admin) -->
+    <!-- Botón de comentarios — muestra el conteo y hace toggle -->
+    <button class="btn-comentarios" [class.activo]="mostrarComentarios()" (click)="toggleComentarios()">
+      <i class="bi bi-chat"></i>
+      {{ cantidadComentarios() }}
+    </button>
+
     @if (puedoEliminar()) {
       <button class="btn-eliminar" (click)="clickEliminar()">
         <i class="bi bi-trash3"></i> Eliminar
@@ -55,4 +55,36 @@
     }
 
   </div>
+
+  <!-- Sección de comentarios (solo lectura — Sprint 3 agrega el formulario) -->
+  @if (mostrarComentarios()) {
+    <div class="comentarios-seccion">
+
+      @if (cantidadComentarios() === 0) {
+        <p class="sin-comentarios">
+          <i class="bi bi-chat-square me-1"></i>
+          Todavía no hay comentarios.
+        </p>
+      } @else {
+        <div class="comentarios-lista">
+          @for (c of publicacion().comentarios; track c._id) {
+            <div class="comentario-item">
+              <img
+                class="comentario-avatar"
+                [src]="c.autor.fotoPerfil || 'https://ui-avatars.com/api/?name=' + c.autor.nombre + '&background=6366f1&color=fff&size=28'"
+                [alt]="c.autor.nombreUsuario"
+              />
+              <div class="comentario-cuerpo">
+                <span class="comentario-autor">{{ c.autor.nombre }} {{ c.autor.apellido }}</span>
+                <span class="comentario-fecha ms-2">{{ c.createdAt | date:'dd/MM HH:mm' }}</span>
+                <p class="comentario-texto">{{ c.contenido }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  }
+
 </div>

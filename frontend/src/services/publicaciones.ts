@@ -1,12 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../environments/environment.development';
 
 @Injectable({ providedIn: 'root' })
 export class PublicacionesService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/api/publicaciones';
+  private apiUrl = `${environment.apiUrl}/publicaciones`;;
 
   // ── CREAR (Recibe FormData porque puede tener imagen)
   async crear(formData: FormData) {
