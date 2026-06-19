@@ -1,4 +1,4 @@
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:3000/api',
+  production: true,
+  apiUrl: 'https://michel-massaad-tp2-prog4-2026-c1.onrender.com/api'
 };
