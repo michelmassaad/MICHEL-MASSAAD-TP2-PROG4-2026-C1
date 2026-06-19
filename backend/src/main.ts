@@ -6,9 +6,14 @@ import cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Necesario para que Angular (4200) envíe cookies a NestJS (3000)
+  // Permite requests desde local Y desde Vercel
+  const origenesPermitidos = [
+    'http://localhost:4200',
+    process.env['FRONTEND_URL'], // ← URL de Vercel (se configura en Render)
+  ].filter(Boolean); // filter(Boolean) elimina los undefined
+
   app.enableCors({
-    origin: 'http://localhost:4200',
+    origin: origenesPermitidos,
     credentials: true,
   });
 

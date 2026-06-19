@@ -83,11 +83,11 @@ export class AuthController {
   // secure false en dev porque no hay HTTPS local, true solo en producción
   // maxAge 15 minutos sincronizado con el expiresIn del JWT
   private setTokenCookie(res: Response, token: string) {
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env['NODE_ENV'] === 'production',
-      maxAge: 1000 * 60 * 15,
-    });
-  }
+  res.cookie('access_token', token, {
+    httpOnly: true,
+    sameSite: process.env['NODE_ENV'] === 'production' ? 'none' : 'lax',
+    secure: process.env['NODE_ENV'] === 'production',
+    maxAge: 1000 * 60 * 15,
+  });
+}
 }
