@@ -89,8 +89,4 @@ export class AuthService {
     }
   }
 
-  // Método para verificar si la ruta actual es de autenticación (login o registro)
-  esRutaAuth(): boolean {
-    return this.router.url.includes('/login') || this.router.url.includes('/registro');
-}
 }
