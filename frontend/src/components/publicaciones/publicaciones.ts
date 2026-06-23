@@ -28,7 +28,7 @@ export class PublicacionesComponent implements OnInit {
   publicando = signal(false);
   errorPublicacion = signal('');
 
-  // ── Modal de confirmación de eliminación (reemplaza confirm()) ──
+  // Modal de confirmación de eliminación
   mostrarModalEliminar = signal(false);
   idAEliminar = signal<string | null>(null);
   eliminando = signal(false);
@@ -49,6 +49,7 @@ export class PublicacionesComponent implements OnInit {
     descripcion: ['', [Validators.required, Validators.minLength(10)]]
   });
   imagenSeleccionada = signal<File | null>(null);
+  imagenPreview = signal<string | null>(null); // ← nuevo
 
   async ngOnInit() {
     await this.auth.sessionReady;
@@ -100,6 +101,11 @@ export class PublicacionesComponent implements OnInit {
     const file: File = event.target.files[0];
     if (file) {
       this.imagenSeleccionada.set(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagenPreview.set(e.target?.result as string); // ← nuevo
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -124,6 +130,7 @@ export class PublicacionesComponent implements OnInit {
       await this.publicacionesService.crear(formData);
       this.crearForm.reset();
       this.imagenSeleccionada.set(null);
+      this.imagenPreview.set(null); // ← limpiar preview
       this.mostrarFormulario.set(false);
       this.ordenamiento.set('fecha');
       this.cargarPublicaciones(true);
@@ -138,8 +145,6 @@ export class PublicacionesComponent implements OnInit {
   // ==========================================
   // INTERACCIONES DE LAS TARJETAS
   // ==========================================
-
-  // ── FIX: ahora sí llama a darLike / quitarLike con actualización optimista ──
   async toggleLike(id: string) {
     const pub = this.publicaciones().find(p => p._id === id);
     if (!pub) return;
@@ -147,7 +152,6 @@ export class PublicacionesComponent implements OnInit {
     const miId = this.auth.user()?._id ?? '';
     const yaLeDiLike = pub.likes.some((l: any) => l.toString() === miId || l === miId);
 
-    // Actualización optimista: la UI responde al instante sin esperar al servidor
     this.publicaciones.update(lista =>
       lista.map(p => {
         if (p._id !== id) return p;
@@ -166,12 +170,10 @@ export class PublicacionesComponent implements OnInit {
       }
     } catch (error) {
       console.error('Error al procesar la reacción de me gusta', error);
-      // Si falló, revertimos al estado real del servidor
       this.cargarPublicaciones(true);
     }
   }
 
-  // ── FIX: modal en lugar de confirm() (el enunciado lo prohíbe) ──
   eliminar(id: string) {
     this.idAEliminar.set(id);
     this.mostrarModalEliminar.set(true);

@@ -85,24 +85,34 @@
                 <div class="invalid-feedback fw-medium">La fecha de nacimiento es requerida.</div>
               }
             </div>
-            <div class="col-12 col-md-6">
-              <label class="form-label text-secondary small fw-semibold">Imagen de Perfil</label>
-              <div class="position-relative file-upload-wrapper">
-                <input type="file" (change)="onFileChange($event)"
-                  class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input"
-                  accept="image/*" style="cursor: pointer; z-index: 2;">
-                <div class="form-control-ui d-flex align-items-center gap-3 visual-file-counterpart"
-                  style="z-index: 1; padding: 0.4rem 0.6rem;">
-                  <div class="fake-file-btn-badge">
-                    <i class="bi bi-paperclip ms-1"></i>
-                  </div>
-                  <div class="fake-file-text text-truncate small" [class.text-white]="fotoSeleccionada">
-                    {{ fotoSeleccionada ? fotoSeleccionada.name : 'Ningún archivo seleccionado' }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+<div class="col-12 col-md-6">
+  <label class="form-label text-secondary small fw-semibold">Imagen de Perfil</label>
+
+  <div class="position-relative file-upload-wrapper">
+    <input type="file" (change)="onFileChange($event)"
+      class="position-absolute top-0 start-0 w-100 h-100 opacity-0 real-file-input"
+      accept="image/*" style="cursor: pointer; z-index: 2;">
+
+    <div class="form-control-ui d-flex align-items-center gap-3 visual-file-counterpart"
+      style="z-index: 1; padding: 0.4rem 0.6rem;">
+
+      <div class="fake-file-btn-badge" style="overflow: hidden; flex-shrink: 0; padding: 0;">
+        @if (fotoPreview()) {
+          <img [src]="fotoPreview()" alt="Preview"
+               style="width: 32px; height: 32px; object-fit: cover; display: block;" />
+        } @else {
+          <i class="bi bi-paperclip ms-1"></i>
+        }
+      </div>
+
+      <div class="fake-file-text text-truncate small" [class.text-white]="fotoSeleccionada">
+        {{ fotoSeleccionada ? fotoSeleccionada.name : 'Ningún archivo seleccionado' }}
+      </div>
+
+    </div>
+  </div>
+</div>
+          </div>    
 
           <div class="mb-3">
             <label class="form-label text-secondary small fw-semibold">Descripción Breve</label>

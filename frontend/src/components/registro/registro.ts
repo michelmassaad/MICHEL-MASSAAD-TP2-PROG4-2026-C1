@@ -22,8 +22,6 @@ export class RegistroComponent {
   mensajeExitoso = signal('');
   mostrarPassword = signal(false);
 
-  fotoSeleccionada: File | null = null;
-
   registroForm = this.fb.group({
     nombre: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
     apellido: ['', [Validators.required, Validators.pattern(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/)]],
@@ -42,10 +40,18 @@ export class RegistroComponent {
     return password === repetirPassword ? null : { noCoincide: true };
   }
 
+  fotoSeleccionada: File | null = null;
+  fotoPreview = signal<string | null>(null); // ← signal
+
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
       this.fotoSeleccionada = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.fotoPreview.set(e.target?.result as string); // ← .set()
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -76,6 +82,8 @@ export class RegistroComponent {
     if (registrado) {
       this.mensajeExitoso.set('¡Cuenta creada con éxito!');
       this.registroForm.reset();
+      this.fotoSeleccionada = null;  // ← limpiar
+      this.fotoPreview.set(null);    // ← limpiar preview
       await firstValueFrom(timer(1500));
       this.router.navigate(['/login']);
     } else {
