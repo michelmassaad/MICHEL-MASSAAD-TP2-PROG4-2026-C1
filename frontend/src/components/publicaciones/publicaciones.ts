@@ -36,7 +36,7 @@ export class PublicacionesComponent implements OnInit {
   // Paginación y filtros
   ordenamiento = signal('fecha');
   offset = signal(0);
-  limit = 10;
+  limit = 3;
 
   hayMas = computed(() => this.publicaciones().length < this.total());
   nombreImagen = computed(() => this.imagenSeleccionada()?.name || '');
